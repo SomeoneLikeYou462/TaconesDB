@@ -120,9 +120,81 @@ def checkMoviesCollection():
     conn.close()
     print("✅ Collection status of movies changed")
 
+def updateSeriePopularity(serie, series):
+    serie_id = serie[0]
+    response = requests.get(f"{TMDB_API_URL}/tv/{serie_id}?api_key={TMDB_API_KEY}")
+    if response.status_code == 200:
+        data = response.json()
+        if data["popularity"] != serie[1]:
+            series.append(f"UPDATE SERIES SET popularidad = {data['popularity']} WHERE id = {serie_id};")
+        if data["vote_average"] != serie[2]:
+            series.append(f"UPDATE SERIES SET valoracion = {data['vote_average']} WHERE id = {serie_id};")
+        
+def updateSeriesPopularity():
+    conn = connect_db()
+    cursor = conn.cursor()
+    dbSeries = cursor.execute("SELECT id, popularidad, valoracion FROM SERIES").fetchall()
+    threads = []
+    series = []
+    total = len(dbSeries)
+    for n, serie in list(enumerate(dbSeries)):
+        t = threading.Thread(target=updateSeriePopularity, args=(serie,series))
+        threads.append(t)
+        t.start()
+        time.sleep(0.1)
+        if n == 11:
+            break
+        print(f"Updating popularity of series {n}/{total} - {serie[0]}")
+    for t in threads:
+        t.join()
+    
+    query = "\n".join(series)
+    print(query)
+    cursor.executescript(query)
+    conn.commit()
+    conn.close()
+    print("✅ Popularity of series updated")
+
+def updateMoviePopularity(movie, movies):
+    movie_id = movie[0]
+    response = requests.get(f"{TMDB_API_URL}/movie/{movie_id}?api_key={TMDB_API_KEY}")
+    if response.status_code == 200:
+        data = response.json()
+        if data["popularity"] != movie[1]:
+            movies.append(f"UPDATE PELIS SET popularidad = {data['popularity']} WHERE id = {movie_id};")
+        if data["vote_average"] != movie[2]:
+            movies.append(f"UPDATE PELIS SET valoracion = {data['vote_average']} WHERE id = {movie_id};")
+
+
+def updateMoviesPopularity():
+    conn = connect_db()
+    cursor = conn.cursor()
+    dbMovies = cursor.execute("SELECT id, popularidad, valoracion FROM PELIS").fetchall()
+    threads = []
+    movies = []
+    total = len(dbMovies)
+    for n, movie in list(enumerate(dbMovies)):
+        t = threading.Thread(target=updateMoviePopularity, args=(movie,movies))
+        threads.append(t)
+        t.start()
+        time.sleep(0.1)
+        print(f"Updating popularity of movies {n}/{total} - {movie[0]}")
+    for t in threads:
+        t.join()
+    
+    query = "\n".join(movies)
+    print(query)
+    cursor.executescript(query)
+    conn.commit()
+    conn.close()
+    print("✅ Popularity of movies updated")
+
 parser = argparse.ArgumentParser(description="Script to interact with TMDB API")
 parser.add_argument("--check-series-production", action="store_true", help="Check series production")
 parser.add_argument("--check-movie-collection", action="store_true", help="Check movie collection")
+parser.add_argument("--update-series-popularity", action="store_true", help="Update series popularity")
+parser.add_argument("--update-movies-popularity", action="store_true", help="Update movie popularity")
+
 
 args = parser.parse_args()
 
@@ -130,3 +202,7 @@ if args.check_series_production:
     checkSeriesProduction()
 elif args.check_movie_collection:
     checkMoviesCollection()
+elif args.update_series_popularity:
+    updateSeriesPopularity()
+elif args.update_movies_popularity:
+    updateMoviesPopularity()
