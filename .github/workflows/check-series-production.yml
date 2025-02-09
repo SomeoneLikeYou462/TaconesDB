@@ -3,6 +3,7 @@ name: Monthly Check Series Production
 on:
     schedule:
         - cron: '0 3 15 * *'
+    workflow_dispatch:
 jobs:
     check_series_production:
         runs-on: ubuntu-latest
