@@ -11,7 +11,7 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY", None)
 if TMDB_API_KEY is None:
     raise ValueError("TMDB_API_KEY is not set!")
 TMDB_API_URL = "https://api.themoviedb.org/3"
-
+SERIES_QUERY = 'UPDATE SERIES SET produccion = "%s", status = "%s" WHERE id = "%s";'
 DB_FILE = "../../tacones.db"
 
 
@@ -26,8 +26,8 @@ def checkSerieProduction(serie, series):
     response = requests.get(f"{TMDB_API_URL}/tv/{serie_id}?api_key={TMDB_API_KEY}")
     if response.status_code == 200:
         data = response.json()
-        query = 'UPDATE SERIES SET produccion = "%s", status = "%s" WHERE id = "%s";'
-        series.append(query %(data["in_production"], data["status"], serie_id))
+        if data["in_production"] != serie[1] or data["status"] != serie[2]:
+            series.append(SERIES_QUERY %(data["in_production"], data["status"], serie_id))
 
 def checkSeriesProduction():
     conn = connect_db()
@@ -46,6 +46,7 @@ def checkSeriesProduction():
         t.join()
     
     query = "\n".join(series)
+    print(query)
     cursor.executescript(query)
     conn.commit()
     conn.close()
