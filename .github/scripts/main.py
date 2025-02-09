@@ -8,6 +8,8 @@ import threading
 import argparse
 
 TMDB_API_KEY = os.getenv("TMDB_API_KEY", None)
+if TMDB_API_KEY is None:
+    raise ValueError("TMDB_API_KEY is not set!")
 TMDB_API_URL = "https://api.themoviedb.org/3"
 
 DB_FILE = "../../tacones.db"
