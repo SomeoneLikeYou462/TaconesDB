@@ -26,13 +26,13 @@ def checkSerieProduction(serie, series):
     response = requests.get(f"{TMDB_API_URL}/tv/{serie_id}?api_key={TMDB_API_KEY}")
     if response.status_code == 200:
         data = response.json()
-        if data["in_production"] != serie[1] or data["status"] != serie[2]:
+        if bool(data["in_production"]) != bool(serie[1]) or data["status"] != serie[2]:
             series.append(SERIES_QUERY %(data["in_production"], data["status"], serie_id))
 
 def checkSeriesProduction():
     conn = connect_db()
     cursor = conn.cursor()
-    dbSeries = cursor.execute("SELECT id,produccion, status FROM SERIES").fetchall()
+    dbSeries = cursor.execute("SELECT id, produccion, status FROM SERIES").fetchall()
     series = []
     threads = []
     total = len(dbSeries)
